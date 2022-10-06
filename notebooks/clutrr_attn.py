@@ -50,7 +50,6 @@ def read_glove_embeddings(path: str) -> tuple[list[str], dict[str, list[float]]]
 words, word_to_vec_map = read_glove_embeddings(path_to("glove.6B.100d.txt"))
 embedding_dim = len(word_to_vec_map["the"])
 
-# todo: is this sensible?
 SPECIAL_ENTITY_EMBEDDING = word_to_vec_map["person"]
 
 
@@ -187,8 +186,6 @@ class AttentionTextToGraphNetwork(nn.Module):
         self.k_proj_weight = Parameter(torch.empty((qkv_embed_dim, qkv_embed_dim), **factory_kwargs))
         self.v_proj_weight = Parameter(torch.empty((qkv_embed_dim, qkv_embed_dim), **factory_kwargs))
 
-        # todo bias?
-
         self._reset_parameters()
 
     def _reset_parameters(self):
@@ -196,7 +193,6 @@ class AttentionTextToGraphNetwork(nn.Module):
         xavier_uniform_(self.k_proj_weight)
         xavier_uniform_(self.v_proj_weight)
 
-        # todo bias?
     def forward(self):
         pass
 
@@ -248,7 +244,6 @@ class GCN(torch.nn.Module):
         self.conv2 = GCNConv(embed_dim, embed_dim)
 
         self.target_size = len(clutrr_data.relation_lst)
-        # todo try embed_dim * 3 with averaged graph emb
         self.linear = nn.Linear(embed_dim * 2, self.target_size)
 
     def forward(self, batch, target: Tensor) -> Tensor:
@@ -310,7 +305,6 @@ class Model(nn.Module):
         self.attn_cutoff = 0.05
 
     def forward(self, x: Tensor, attn_mask: Tensor, y: Tensor, targets: Tensor):
-        # todo add more attn layers - if it makes sense
         attn_out, attn = self.attention(x, x, x, attn_mask=attn_mask)
 
         # take attn and selectively create the input graph
@@ -321,8 +315,6 @@ class Model(nn.Module):
         # edges = torch.tensor(, requires_grad=True)
         # x is always the same
 
-        # todo: try "deleting" edges using x instead of edge index
-        #  set given nodes to 0s
         batch_data = []
 
         for index in range(x.size(0)):
@@ -345,7 +337,6 @@ class Model(nn.Module):
             #     for j in range(edge_mask.size(1)):
             #         if edge_mask[index, i, j]:
             #             edge_index_t.append([i, j])
-            #             # todo use this?
             #             edge_attr.append(attn[index, i, j])
             # edge_index = [[edge[0] for edge in edge_index_t], [edge[1] for edge in edge_index_t]]
 

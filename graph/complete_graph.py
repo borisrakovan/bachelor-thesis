@@ -11,7 +11,7 @@ from nlp.embeddings import WordEmbeddings
 from nlp.tokenization import tokenize_normalize_naive, tokenize_normalize_wo_stopwords, tokenize_normalize_relevant
 
 
-class _TotalGraph(GraphFactory):
+class _CompleteGraph(GraphFactory):
     def __init__(self, entity_lst: list[str], relation_lst: list[str], batch_size: int, device: str, tokenize_func: Callable):
         super().__init__(entity_lst, relation_lst, batch_size, device)
         self.tokenize_func = tokenize_func
@@ -26,6 +26,7 @@ class _TotalGraph(GraphFactory):
         return -1
 
     def _construct_graph(self, instance: Instance, _: int) -> tuple[Data, Edge]:
+        # vocab = self.embeddings.words
         vocab = self.relation_lst
         story_tokens, story_entities = self.tokenize_func(instance, vocab=vocab)
 
@@ -50,8 +51,8 @@ class _TotalGraph(GraphFactory):
         tgt_frm, tgt_rel, tgt_to = instance.target
         try:
             target_edge = (
-                next(idx for idx, token in enumerate(story_tokens) if token == tgt_frm.lower()),
-                next(idx for idx, token in enumerate(story_tokens) if token == tgt_to.lower())
+                next(idx for idx, token in enumerate(story_tokens + list(story_entities)) if token == tgt_frm.lower()),
+                next(idx for idx, token in enumerate(story_tokens + list(story_entities)) if token == tgt_to.lower())
             )
         except StopIteration:
             print(story_tokens)
@@ -71,6 +72,6 @@ class _TotalGraph(GraphFactory):
         return data, target_edge
 
 
-TotalGraphV1 = functools.partial(_TotalGraph, tokenize_func=tokenize_normalize_naive)
-TotalGraphV2 = functools.partial(_TotalGraph, tokenize_func=tokenize_normalize_wo_stopwords)
-TotalGraphV3 = functools.partial(_TotalGraph, tokenize_func=tokenize_normalize_relevant)
+CompleteGraphV1 = functools.partial(_CompleteGraph, tokenize_func=tokenize_normalize_naive)
+CompleteGraphV2 = functools.partial(_CompleteGraph, tokenize_func=tokenize_normalize_wo_stopwords)
+CompleteGraphV3 = functools.partial(_CompleteGraph, tokenize_func=tokenize_normalize_relevant)

@@ -150,6 +150,9 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
-data/results
-data/images
-data/glove
+data
+
+rakovan_thesis_code.zip
+rakovan_thesis_code_final.zip
+
+.DS_store

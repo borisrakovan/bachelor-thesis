@@ -222,8 +222,6 @@ def main(argv):
 
                         elif rel_lst == ['has'] and ('called' in obj_lst or 'named' in obj_lst) \
                                 and (len((set(rel_lst) & set(kinship)) | (set(obj_lst) & set(kinship)))==1):
-                            # if no name appear in obj_lst, try to guest  Todo: (may be discard) A is father: father A / A is father of
-                            # Todo: may be 'has' useless
                             flag = 1
                             rel = list((set(rel_lst) & set(kinship)) | (set(obj_lst) & set(kinship)))[0]
                             if sub_lst[0].istitle():

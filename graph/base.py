@@ -46,10 +46,10 @@ class GraphFactory(ABC):
 
         res = []
         for i, (batch_start, batch_end) in enumerate(batches):
-            if i > 0 and i % 10 == 0:
+            if i > 0 and i % 40 == 0:
                 print(f"Processed {i}/{len(batches)}")
             batch_instances = instances[batch_start:batch_end]
-            max_num_entities = max(i.nb_nodes for i in batch_instances)
+            max_num_entities = max(i.num_nodes for i in batch_instances)
 
             batch_data = [
                 self._construct_graph(inst, max_num_entities)

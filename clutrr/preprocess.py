@@ -1,5 +1,5 @@
 """
-Disclaimer: Some of this code was significantly inspired by this repository:
+Disclaimer: Parts of the preprocessing script were taken from this repository:
 https://github.com/uclnlp/ctp
 """
 
@@ -14,17 +14,23 @@ from typing import List, Tuple, Any, Optional
 
 from utils import path_to
 
-_TEST_PATHS = [
-    "data_089907f8/1.2_test.csv",
-    "data_089907f8/1.3_test.csv",
-    "data_089907f8/1.4_test.csv",
-    "data_089907f8/1.5_test.csv",
-    "data_089907f8/1.6_test.csv",
-    "data_089907f8/1.7_test.csv",
-    "data_089907f8/1.8_test.csv",
-    "data_089907f8/1.9_test.csv",
-    "data_089907f8/1.10_test.csv",
+
+# _CLUTRR_DATASET = "data_089907f8/"
+_CLUTRR_DATASET = "data_db9b8f04/"
+
+_TEST_FILES = [
+    "1.2_test.csv",
+    "1.3_test.csv",
+    "1.4_test.csv",
+    "1.5_test.csv",
+    "1.6_test.csv",
+    "1.7_test.csv",
+    "1.8_test.csv",
+    "1.9_test.csv",
+    "1.10_test.csv",
 ]
+
+TRAIN_FILE = "1.2,1.3,1.4_train.csv"
 
 
 with open(path_to("relations_store.yaml"), 'r') as f:
@@ -35,15 +41,19 @@ Story = List[Fact]
 
 
 class Instance:
-    def __init__(self,
-                 story: Story,
-                 target: Fact,
-                 raw_story: str,
-                 nb_nodes: Optional[int] = None):
+    def __init__(
+        self,
+        story: Story,
+        target: Fact,
+        raw_story: str,
+        num_nodes: Optional[int] = None
+    ):
         self._story = story
         self._target = target
         self._raw_story = raw_story
-        self._nb_nodes = nb_nodes
+        self._num_nodes = num_nodes
+
+        self._bert_story = f'{self.target[0]} {self.target[2]} [SEP] {self._raw_story.replace("[", "").replace("]", "")}'
 
     @property
     def story(self) -> Story:
@@ -55,21 +65,29 @@ class Instance:
 
     @property
     def raw_story(self) -> str:
+        if self._raw_story is None:
+            raise NotImplementedError
         return self._raw_story
 
     @property
-    def nb_nodes(self) -> Optional[int]:
-        return self._nb_nodes
+    def bert_story(self) -> str:
+        return self._bert_story
+
+    @property
+    def num_nodes(self) -> Optional[int]:
+        return self._num_nodes
 
     def __str__(self) -> str:
         return f'{self.story}\t{self.target}'
 
 
 class Data:
-    def __init__(self,
-                 train_path,
-                 test_paths: Optional[List[str]] = None,
-                 with_tagged_entities: bool = False):
+    def __init__(
+        self,
+        train_path,
+        test_paths: Optional[List[str]] = None,
+        with_tagged_entities: bool = False
+    ):
         self.relation_to_predicate = {r['rel']: k for k, v in relations_dict.items()
                                       for _, r in v.items() if k != 'no-relation'}
 
@@ -94,8 +112,7 @@ class Data:
 
     @property
     def train(self) -> List[Instance]:
-        # TODO: tweak the number of tranining samples here
-        return self._train_instances[:6000]
+        return self._train_instances
 
     @property
     def test(self) -> OrderedDict[str, List[Instance]]:
@@ -113,20 +130,20 @@ class Data:
             for i, row in enumerate(reader):
                 _id, _, raw_story, query, _, target, _, _, _, _, _, story_edges, edge_types, _, genders, _, tmp, _ = row
                 if len(_id) > 0:
-                    nb_nodes = int(tmp[tmp.rfind(":") + 2:-1]) + 1
+                    num_nodes = int(tmp[tmp.rfind(":") + 2:-1]) + 1
                     id_to_name = {i: name.split(':')[0] for i, name in enumerate(genders.split(','))}
                     _story, _edge, _query = Data._to_obj(story_edges), Data._to_obj(edge_types), Data._to_obj(query)
                     triples = [(id_to_name[s_id], p, id_to_name[o_id]) for (s_id, o_id), p in zip(_story, _edge)]
                     target = (_query[0], target, _query[1])
                     raw_story = raw_story if with_tagged_entities else raw_story.replace("[", "").replace("]", "")
-                    instance = Instance(triples, target, raw_story, nb_nodes=nb_nodes)
+                    instance = Instance(triples, target, raw_story, num_nodes=num_nodes)
                     res += [instance]
         return res
 
 
-def load_clutrr() -> Data:
+def load_clutrr(with_tagged_entities: bool = True) -> Data:
     return Data(
-        train_path=path_to("data_db9b8f04/1.2,1.3,1.4_train.csv"),
-        test_paths=[path_to(tf) for tf in _TEST_PATHS],
-        with_tagged_entities=True
+        train_path=path_to(_CLUTRR_DATASET + TRAIN_FILE),
+        test_paths=[path_to(_CLUTRR_DATASET + tf) for tf in _TEST_FILES],
+        with_tagged_entities=with_tagged_entities
     )

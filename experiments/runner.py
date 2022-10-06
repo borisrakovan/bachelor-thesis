@@ -7,16 +7,17 @@ from matplotlib import pyplot as plt
 import torch.nn.functional as F
 
 from clutrr.preprocess import load_clutrr
+from experiments.schemas import Experiment, TrainConfig, TrainHistory
 from models.base import BaseNet
 from models.factory import create_model
-from results.store import store_results
-from schemas import TrainConfig, TrainHistory, Experiment
+from experiments.persist import store_results
 from graph.schemas import InputBatch
 from utils import transpose_2d_list
 
 
 def run_experiment(experiment: Experiment):
     clutrr_data = load_clutrr()
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     train_instances = (
@@ -44,6 +45,7 @@ def run_experiment(experiment: Experiment):
         num_nodes=graph_factory.input_dim,
         edge_dim=graph_factory.edge_dim,
         target_size=len(clutrr_data.relation_lst),
+        relation_lst=clutrr_data.relation_lst,
         device=device,
     )
 
@@ -78,7 +80,6 @@ def training_loop(
 
         for batch in train_data:
             logits = model(batch)
-
             y = batch.geo_batch.y.squeeze(1)
             loss = F.cross_entropy(logits, y, reduction='sum')
             batch_loss += loss.item()
@@ -125,24 +126,26 @@ def test(test_data: list[InputBatch], model: BaseNet) -> float:
 def show_plots(history: TrainHistory, train_config: TrainConfig) -> None:
     num_epochs = train_config.num_epochs
 
-    def plot_variable(var: list, var_name: str, var_label: Union[str, list]):
+    def plot_variable(var: list, var_name: str, var_label: Union[str, list], y_lim: float = None):
         plt.ylabel(var_name)
         plt.xlabel("Epoch")
 
         x_marks = num_epochs // len(var) + (0 if num_epochs % len(var) == 0 else 1)
         x = torch.arange(0, num_epochs, x_marks)
         plt.xlim(0, num_epochs)
+        if y_lim:
+            plt.ylim(0, y_lim)
 
         plt.plot(x, var, label=var_label)
         plt.legend()
         plt.show()
 
-    plot_variable(history["train_losses"], "Loss", "Average loss")
-    plot_variable(history["train_acc"], "Train acc", "Train accuraccy")
+    # plot_variable(history["train_losses"], "Loss", "Average loss")
+    # plot_variable(history["train_acc"], "Train acc", "Train accuraccy")
 
     test_vars = [test_acc for test_acc in history["test_acc"].values()]
     test_labels = [test_name for test_name in history["test_acc"]]
-    plot_variable(transpose_2d_list(test_vars), "Test acc", test_labels)
+    plot_variable(transpose_2d_list(test_vars), "Test acc", test_labels, y_lim=1.1)
 
 
 def experiment_summary(experiment: Experiment, train_history: TrainHistory) -> None:

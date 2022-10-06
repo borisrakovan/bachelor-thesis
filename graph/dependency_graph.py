@@ -1,6 +1,5 @@
 import spacy
 import torch
-from spacy import displacy
 from spacy.tokens import Token
 from torch_geometric.data import Data
 
@@ -54,13 +53,8 @@ class DependencyGraph(GraphFactory):
         return self.vocab.num_edge_types
 
     def _construct_graph(self, instance: Instance, max_num_entities: int) -> tuple[Data, Edge]:
-        # todo: more intelligent graph creation
-        #  spacy already has embeddings - start with those?
-        #  keep only alpha tokens, then only certain POS
         story = instance.raw_story.replace("[", "").replace("]", "")
         doc = self.nlp(story)
-        # todo visualize
-        # displacy.serve(doc, style="dep")
 
         tokens: list[Token] = list(doc)
 
@@ -88,8 +82,6 @@ class DependencyGraph(GraphFactory):
                 edge_attr.append(edge_typ_id)
 
         edge_index = [[edge[0] for edge in edge_index_t], [edge[1] for edge in edge_index_t]]
-
-        # todo: we treat relations as labels and relations in text differently here!
 
         try:
             target_edge = (token_to_idx[instance.target[0]], token_to_idx[instance.target[2]])

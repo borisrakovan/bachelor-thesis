@@ -14,9 +14,8 @@ def path_to(name):
 
 class WordEmbeddings:
     def __init__(self):
-        self.words, self.word_to_vec_map = self._read_embeddings(path_to("glove.42B.300d.txt"))
+        self.words, self.word_to_vec_map = self._read_embeddings(path_to("glove/glove.42B.300d.txt"))
         self.embedding_dim = len(self.word_to_vec_map["the"])
-        # todo: is this sensible?
         self.special_ent_embedding = self.word_to_vec_map["person"]
 
     def _read_embeddings(self, path: str) -> tuple[list[str], EmbeddingDict]:
